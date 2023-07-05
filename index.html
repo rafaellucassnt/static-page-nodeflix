@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NodeFlix</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.15/dist/tailwind.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-100">
+  <div class="container mx-auto p-4">
+    <div id="login-screen">
+      <h1 class="text-2xl font-semibold mb-4">Login</h1>
+      <br>
+      <form class="flex flex-col" id="login-form">
+        <input type="text" class="mb-2 p-2 border border-gray-300 rounded" name='username' placeholder="Username"
+          required>
+        <input type="password" class="mb-2 p-2 border border-gray-300 rounded" name='password' placeholder="Password"
+          required>
+        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded">
+          Login
+        </button>
+      </form>
+      <button class="mt-4 text-blue-500 underline" id="register-link">Criar Conta</button>
+    </div>
+
+    <div id="register-screen" class="hidden">
+      <h1 class="text-2xl font-semibold mb-4">Registrar</h1>
+      <form class="flex flex-col" id="register-form">
+        <input type="text" class="mb-2 p-2 border border-gray-300 rounded" name='name' placeholder="Nome" required>
+        <input type="text" class="mb-2 p-2 border border-gray-300 rounded" name='username' placeholder="Username"
+          required>
+        <input type="email" class="mb-2 p-2 border border-gray-300 rounded" name='email' placeholder="Email" required>
+        <input type="password" class="mb-2 p-2 border border-gray-300 rounded" name='password' placeholder="Senha"
+          required>
+        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded">
+          Registrar
+        </button>
+      </form>
+      <button class="mt-4 text-blue-500 underline" id="login-link">Voltar para Login</button>
+    </div>
+
+    <div id="movies-screen" class="hidden">
+      <h1 class="text-2xl font-semibold mb-4">Lista de Filmes</h1>
+      <button class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded mb-4"
+        id="add-movie-button">Adicionar Filmes</button>
+      <div id="movies-container"></div>
+    </div>
+
+    <div id="movie-form-screen" class="hidden">
+      <h1 class="text-2xl font-semibold mb-4" id="movie-form-title"></h1>
+      <form class="flex flex-col" id="movie-form">
+        <input type="text" class="mb-2 p-2 border border-gray-300 rounded" name="title" placeholder="Title" required>
+        <input type="text" class="mb-2 p-2 border border-gray-300 rounded" name="debut" placeholder="Debut" required>
+        <input type="text" class="mb-2 p-2 border border-gray-300 rounded" name="genre" placeholder="Genre" required>
+        <input type="text" class="mb-2 p-2 border border-gray-300 rounded" name="duration" placeholder="Duration"
+          required>
+        <input type="text" class="mb-2 p-2 border border-gray-300 rounded" name="origin" placeholder="Origin" required>
+        <input type="text" class="mb-2 p-2 border border-gray-300 rounded" name="direction" placeholder="Direction"
+          required>
+        <input type="text" class="mb-2 p-2 border border-gray-300 rounded" name="script" placeholder="Script" required>
+        <input type="text" class="mb-2 p-2 border border-gray-300 rounded" name="distributor" placeholder="Distributor"
+          required>
+        <input type="number" class="mb-2 p-2 border border-gray-300 rounded" name="classification"
+          placeholder="Classification" required>
+        <input type="number" class="mb-2 p-2 border border-gray-300 rounded" name="year" placeholder="Year" required>
+        <textarea class="mb-2 p-2 border border-gray-300 rounded" name="synopsis" placeholder="Synopsis"
+          required></textarea>
+        <input type="text" class="mb-2 p-2 border border-gray-300 rounded" name="img" placeholder="Image URL" required>
+        <button type="submit"
+          class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded">Salvar</button>
+        <button class="bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded" id="cancel-movie-button">
+          Cancelar
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const loginScreen = document.getElementById('login-screen');
+    const loginForm = document.getElementById('login-form');
+    const registerLink = document.getElementById('register-link');
+    const registerScreen = document.getElementById('register-screen');
+    const registerForm = document.getElementById('register-form');
+    const loginLink = document.getElementById('login-link');
+    const moviesScreen = document.getElementById('movies-screen');
+    const moviesContainer = document.getElementById('movies-container');
+    const addMovieButton = document.getElementById('add-movie-button');
+    const movieFormScreen = document.getElementById('movie-form-screen');
+    const movieFormTitle = document.getElementById('movie-form-title');
+    const movieForm = document.getElementById('movie-form');
+    const cancelMovieButton = document.getElementById('cancel-movie-button');
+
+    // Variável para armazenar o token de autenticação
+    let authToken = '';
+
+    // Função para fazer a autenticação do usuário
+    function login(username, password) {
+
+      const credencial = {
+        username: username,
+        password: password
+      }
+
+      fetch('https://api-auth-movie.onrender.com/usuarios/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credencial)
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.token) {
+            authToken = data.token;
+            sessionStorage.setItem('authToken', 'Bearer ' + authToken);
+            showMoviesScreen();
+          } else {
+            alert('Nome de usuário ou senha inválidos.');
+          }
+        })
+        .catch(error => {
+          console.log('Erro', error);
+        })
+    }
+
+    // Função para fazer o registro do usuário
+    function register(name, username, email, password, roles) {
+
+      const newUser = {
+        name: name,
+        username: username,
+        email: email,
+        password: password,
+        roles: 'USER'
+      };
+
+      fetch('https://api-auth-movie.onrender.com/usuarios', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newUser)
+      })
+        .then(response => {
+          if (response.ok) {
+            // Registro bem-sucedido
+            alert('Registro com sucesso. Por favor entre.');
+            showLoginScreen();
+          } else {
+            // Falha no registro
+            alert('Registração falhou. Por favor, tente novamente.');
+          }
+        })
+        .catch(error => {
+          console.error('Erro ao registrar:', error);
+        });
+
+    }
+
+    // Função para fazer logout
+    function logout() {
+      authToken = '';
+      showLoginScreen();
+    }
+
+    // Função para exibir a tela de login
+    function showLoginScreen() {
+      loginScreen.style.display = 'block';
+      registerScreen.style.display = 'none';
+      moviesScreen.style.display = 'none';
+      movieFormScreen.style.display = 'none';
+    }
+
+    // Função para exibir a tela de registro
+    function showRegisterScreen() {
+      loginScreen.style.display = 'none';
+      registerScreen.style.display = 'block';
+      moviesScreen.style.display = 'none';
+      movieFormScreen.style.display = 'none';
+    }
+
+    // Função para exibir a tela de filmes
+    function showMoviesScreen() {
+      loginScreen.style.display = 'none';
+      registerScreen.style.display = 'none';
+      moviesScreen.style.display = 'block';
+      movieFormScreen.style.display = 'none';
+      loadMovies();
+    }
+
+    // Função para exibir a tela de formulário de filme
+    function showMovieFormScreen(title) {
+      movieFormTitle.textContent = title;
+      movieForm.reset();
+      movieFormScreen.style.display = 'block';
+      moviesScreen.style.display = 'none';
+    }
+
+    // Função para carregar os filmes da API
+    function loadMovies() {
+
+      moviesContainer.innerHTML = '';
+      fetch('https://api-auth-movie.onrender.com/filmes', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': sessionStorage.getItem('authToken')
+        }
+      })
+        .then(response => response.json())
+        .then(movies => {
+          movies.forEach(movie => {
+            const movieElement = document.createElement('div');
+            movieElement.classList.add('bg-white', 'p-4', 'rounded', 'mb-4');
+
+            const titleElement = document.createElement('h2');
+            titleElement.textContent = movie.title;
+            titleElement.classList.add('text-lg', 'font-semibold', 'mb-2');
+            movieElement.appendChild(titleElement);
+
+            const debutElement = document.createElement('p');
+            debutElement.textContent = `Debut: ${movie.debut}`;
+            movieElement.appendChild(debutElement);
+
+            const genreElement = document.createElement('p');
+            genreElement.textContent = `Genre: ${movie.genre}`;
+            movieElement.appendChild(genreElement);
+
+            const durationElement = document.createElement('p');
+            durationElement.textContent = `Duration: ${movie.duration} minutos`;
+            movieElement.appendChild(durationElement);
+
+            const originElement = document.createElement('p');
+            originElement.textContent = `Origin: ${movie.origin}`;
+            movieElement.appendChild(originElement);
+
+            const directionElement = document.createElement('p');
+            directionElement.textContent = `Direction: ${movie.direction}`;
+            movieElement.appendChild(directionElement);
+
+            const scriptElement = document.createElement('p');
+            scriptElement.textContent = `Script: ${movie.script}`;
+            movieElement.appendChild(scriptElement);
+
+            const distributorElement = document.createElement('p');
+            distributorElement.textContent = `Distributor: ${movie.distributor}`;
+            movieElement.appendChild(distributorElement);
+
+            const classificationElement = document.createElement('p');
+            classificationElement.textContent = `Classification: ${movie.classification}`;
+            movieElement.appendChild(classificationElement);
+
+            const yearElement = document.createElement('p');
+            yearElement.textContent = `Year: ${movie.year}`;
+            movieElement.appendChild(yearElement);
+
+            const synopsisElement = document.createElement('p');
+            synopsisElement.textContent = `Synopsis: ${movie.synopsis}`;
+            movieElement.appendChild(synopsisElement);
+
+            const imgElement = document.createElement('img');
+            imgElement.src = movie.img;
+            imgElement.classList.add('my-4');
+            movieElement.appendChild(imgElement);
+
+            const editButton = document.createElement('button');
+            editButton.textContent = 'Editar';
+            editButton.classList.add('bg-blue-500', 'hover:bg-blue-600', 'text-white', 'font-semibold', 'px-4', 'py-2', 'rounded', 'mr-2');
+            editButton.addEventListener('click', () => {
+              editMovie(movie);
+            });
+            movieElement.appendChild(editButton);
+
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Deletar';
+            deleteButton.classList.add('bg-red-500', 'hover:bg-red-600', 'text-white', 'font-semibold', 'px-4', 'py-2', 'rounded');
+            deleteButton.addEventListener('click', () => {
+              deleteMovie(movie);
+            });
+            movieElement.appendChild(deleteButton);
+
+            moviesContainer.appendChild(movieElement);
+          });
+        })
+        .catch(error => {
+          console.error('Erro ao carregar filmes:', error);
+        });
+    }
+
+    // Função para adicionar um novo filme
+    function addMovie() {
+      showMovieFormScreen('Adicionar Filme');
+      movieForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const formData = new FormData(movieForm);
+        const movie = Object.fromEntries(formData.entries());
+
+
+        fetch('https://api-auth-movie.onrender.com/filmes', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': sessionStorage.getItem('authToken')
+          },
+          body: JSON.stringify(movie)
+        })
+          .then(response => {
+            if (response.ok) {
+              // Filme adicionado com sucesso
+              alert('Filme adicionado com sucesso.');
+              showMoviesScreen();
+            } else {
+              // Erro ao adicionar o filme
+              throw new Error('Falha ao adicionar o filme.');
+            }
+          })
+          .catch(error => {
+            console.error('Erro ao adicionar o filme:', error);
+          });
+
+      });
+    }
+
+
+    // Função para editar um filme
+    function editMovie(movie) {
+      showMovieFormScreen('Editar Filme');
+      movieForm.title.value = movie.title;
+      movieForm.debut.value = movie.debut;
+      movieForm.genre.value = Array.isArray(movie.genre) ? movie.genre.join(', ') : movie.genre;
+      movieForm.duration.value = movie.duration;
+      movieForm.origin.value = movie.origin;
+      movieForm.direction.value = movie.direction;
+      movieForm.script.value = movie.script;
+      movieForm.distributor.value = movie.distributor;
+      movieForm.classification.value = movie.classification;
+      movieForm.year.value = movie.year;
+      movieForm.synopsis.value = movie.synopsis;
+      movieForm.img.value = movie.img;
+
+      movieForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const formData = new FormData(movieForm);
+        const updatedMovie = Object.fromEntries(formData.entries());
+
+
+        fetch(`https://api-auth-movie.onrender.com/filmes/${movie.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': sessionStorage.getItem('authToken')
+          },
+          body: JSON.stringify(updatedMovie)
+        })
+          .then(response => {
+            if (response.ok) {
+              // Filme editado com sucesso
+              alert('Filme editado com sucesso');
+              showMoviesScreen();
+            } else {
+              // Erro ao editar o filme
+              throw new Error('Erro ao editar o filme');
+            }
+          })
+          .catch(error => {
+            console.error('Erro ao editar o filme:', error);
+          });
+      });
+    }
+
+    // Função para excluir um filme
+    function deleteMovie(movie) {
+      fetch(`https://api-auth-movie.onrender.com/filmes/${movie.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': sessionStorage.getItem('authToken')
+        }
+      })
+        .then(response => {
+          if (response.ok) {
+            // Filme excluído com sucesso
+            alert('Movie deleted successfully.');
+            loadMovies();
+          } else {
+            // Erro ao excluir o filme
+            throw new Error('Failed to delete movie.');
+          }
+        })
+        .catch(error => {
+          console.error('Error deleting movie:', error);
+        });
+    }
+
+    // Event listeners
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const username = loginForm.username.value;
+      const password = loginForm.password.value;
+      login(username, password);
+    });
+
+    registerForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = registerForm.name.value;
+      const username = registerForm.username.value;
+      const email = registerForm.email.value;
+      const password = registerForm.password.value;
+      const roles = 'USER'
+      register(name, username, email, password, roles);
+    });
+
+    registerLink.addEventListener('click', () => {
+      showRegisterScreen();
+    });
+
+    loginLink.addEventListener('click', () => {
+      showLoginScreen();
+    });
+
+    addMovieButton.addEventListener('click', () => {
+      addMovie();
+    });
+
+    cancelMovieButton.addEventListener('click', () => {
+      showMoviesScreen();
+    });
+
+    // Inicializar a aplicação
+    showLoginScreen();
+  </script>
+
+</body>
+
+</html>
