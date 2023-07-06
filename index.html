@@ -187,6 +187,7 @@
       registerScreen.style.display = 'none';
       moviesScreen.style.display = 'block';
       movieFormScreen.style.display = 'none';
+      moviesContainer.innerHTML = '';
       loadMovies();
     }
 
@@ -262,6 +263,7 @@
 
             const imgElement = document.createElement('img');
             imgElement.src = movie.img;
+            imgElement.referrerPolicy = 'no-referrer'
             imgElement.classList.add('my-4');
             movieElement.appendChild(imgElement);
 
@@ -382,6 +384,7 @@
           if (response.ok) {
             // Filme excluído com sucesso
             alert('Movie deleted successfully.');
+            moviesContainer.innerHTML = '';
             loadMovies();
           } else {
             // Erro ao excluir o filme
